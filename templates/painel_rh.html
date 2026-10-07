@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Gestor / RH</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 30px 15px;
+            display: flex;
+            justify-content: center;
+        }
+        .wrapper { width: 100%; max-width: 900px; }
+        .card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 { color: #2c3e50; margin: 0; font-size: 1.6rem; }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 10px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; }
+        .btn-aprovar {
+            background-color: #27ae60;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+        .btn-recusar {
+            background-color: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .status-APROVADO { color: #27ae60; font-weight: bold; }
+        .status-RECUSADO { color: #e74c3c; font-weight: bold; }
+        .nav-link { color: #2980b9; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="card">
+            <div class="header">
+                <h1>Painel do Gestor / RH</h1>
+                <div>
+                    <a href="{% url 'registrar_ponto' %}" class="nav-link" style="margin-right: 15px;">Meu Ponto</a>
+                    <form method="POST" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="background: none; border: none; color: #e74c3c; cursor: pointer; text-decoration: underline; font-weight: bold;">Sair</button>
+                    </form>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <h2>Solicitações Pendentes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Funcionário</th>
+                        <th>Data Ponto</th>
+                        <th>Campo</th>
+                        <th>Novo Horário</th>
+                        <th>Justificativa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pendentes %}
+                        <tr>
+                            <td><strong>{{ item.usuario.username }}</strong></td>
+                            <td>{{ item.data_referencia|date:"d/m/Y" }}</td>
+                            <td>{{ item.get_campo_alterado_display }}</td>
+                            <td>{{ item.novo_horario }}</td>
+                            <td>{{ item.justificativa }}</td>
+                            <td>
+                                <a href="{% url 'responder_solicitacao' item.id 'aprovar' %}" class="btn-aprovar">Aprovar</a>
+                                <a href="{% url 'responder_solicitacao' item.id 'recusar' %}" class="btn-recusar">Recusar</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center;">Nenhuma solicitação pendente.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Histórico de Avaliações</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Funcionário</th>
+                        <th>Data Ponto</th>
+                        <th>Campo</th>
+                        <th>Novo Horário</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in historico %}
+                        <tr>
+                            <td>{{ item.usuario.username }}</td>
+                            <td>{{ item.data_referencia|date:"d/m/Y" }}</td>
+                            <td>{{ item.get_campo_alterado_display }}</td>
+                            <td>{{ item.novo_horario }}</td>
+                            <td><span class="status-{{ item.status }}">{{ item.status }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Nenhum histórico recente.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Ponto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 30px 15px;
+            box-sizing: border-box;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 680px;
+        }
+        .container, .card-box {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .container { text-align: center; }
+        h1, h2 { color: #2c3e50; margin-top: 0; }
+        h2 { font-size: 1.2rem; margin-bottom: 15px; }
+        .clock {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        .btn-ponto {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-ponto:hover { background-color: #219150; }
+        .grid-pontos {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .card-ponto {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .card-ponto span { display: block; font-size: 0.75rem; color: #7f8c8d; }
+        .card-ponto strong { font-size: 1rem; color: #2c3e50; }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        
+        /* Formulário de Ajuste */
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+        .btn-secondary {
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+        .btn-secondary:hover { background-color: #2471a3; }
+
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; }
+        .total-badge {
+            background-color: #e8f4fd;
+            color: #2980b9;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <!-- Cabeçalho com identificação do utilizador, atalho do RH e botão de Logout -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span>
+                    Usuário: <strong>{{ user.username }}</strong>
+                    {% if user.tipo == 'RH' or user.is_superuser %}
+                        | <a href="{% url 'painel_rh' %}" style="color: #2980b9; font-weight: bold; text-decoration: none;">Painel RH</a>
+                    {% endif %}
+                </span>
+                <form method="POST" action="{% url 'logout' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: #e74c3c; cursor: pointer; text-decoration: underline; font-weight: bold;">Sair</button>
+                </form>
+            </div>
+
+            <h1>Sistema de Ponto</h1>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="clock" id="relogio">00:00:00</div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" name="bater_ponto" class="btn-ponto">Bater Ponto</button>
+            </form>
+
+            <div class="grid-pontos">
+                <div class="card-ponto">
+                    <span>Entrada 1</span>
+                    <strong>{{ ponto.entrada_1|default:"--:--" }}</strong>
+                </div>
+                <div class="card-ponto">
+                    <span>Saída Almoço</span>
+                    <strong>{{ ponto.saida_1|default:"--:--" }}</strong>
+                </div>
+                <div class="card-ponto">
+                    <span>Retorno Almoço</span>
+                    <strong>{{ ponto.entrada_2|default:"--:--" }}</strong>
+                </div>
+                <div class="card-ponto">
+                    <span>Saída 2</span>
+                    <strong>{{ ponto.saida_2|default:"--:--" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Solicitação de Ajuste -->
+        <div class="card-box">
+            <h2>Solicitar Ajuste de Horário</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Data do Ponto:</label>
+                    {{ form_ajuste.data_referencia }}
+                </div>
+
+                <div class="form-group">
+                    <label>Marcação a Corrigir:</label>
+                    {{ form_ajuste.campo_alterado }}
+                </div>
+
+                <div class="form-group">
+                    <label>Horário Correto:</label>
+                    {{ form_ajuste.novo_horario }}
+                </div>
+
+                <div class="form-group">
+                    <label>Justificativa:</label>
+                    {{ form_ajuste.justificativa }}
+                </div>
+
+                <button type="submit" name="solicitar_ajuste" class="btn-secondary">Enviar Solicitação</button>
+            </form>
+        </div>
+
+        <!-- Histórico Recente -->
+        <div class="card-box">
+            <h2>Histórico Recente</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Ent. 1</th>
+                        <th>Saí. 1</th>
+                        <th>Ent. 2</th>
+                        <th>Saí. 2</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in historico %}
+                        <tr>
+                            <td>{{ reg.data|date:"d/m/Y" }}</td>
+                            <td>{{ reg.entrada_1|default:"--" }}</td>
+                            <td>{{ reg.saida_1|default:"--" }}</td>
+                            <td>{{ reg.entrada_2|default:"--" }}</td>
+                            <td>{{ reg.saida_2|default:"--" }}</td>
+                            <td><span class="total-badge">{{ reg.total_horas }}</span></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">Nenhum registro encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function atualizarRelogio() {
+            const agora = new Date();
+            const h = String(agora.getHours()).padStart(2, '0');
+            const m = String(agora.getMinutes()).padStart(2, '0');
+            const s = String(agora.getSeconds()).padStart(2, '0');
+            document.getElementById('relogio').innerText = `${h}:${m}:${s}`;
+        }
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio();
+    </script>
+</body>
+</html>
